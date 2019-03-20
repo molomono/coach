@@ -1,3 +1,14 @@
+# Fork-Details
+I am currently working on a project in which Reinforcement Learning is used in combination with V-Rep. My V-Rep server is run on Windows 10.
+
+The reinforcemetn learning algorithms are implemented using the [Nervana Systems Coach](https://github.com/NervanaSystems/coach), which runs on Ubuntu.
+More specifically i run it on Windows Subsystem for Linux.
+
+To allow for communication between the AI and simulation is wrapped as a [OpenAI Gym](https://github.com/openai/gym) environment. 
+
+For this reason i have cloned vrep_env, Gym and Coach, to be able to document my changes, allow for easier reinstallation of this project on other computer systems and also to manage versions and changes.
+
+
 # Coach
 
 [![CI](https://img.shields.io/circleci/project/github/NervanaSystems/coach/master.svg)](https://circleci.com/gh/NervanaSystems/workflows/coach/tree/master)
