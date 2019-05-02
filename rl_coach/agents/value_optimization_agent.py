@@ -50,8 +50,9 @@ class ValueOptimizationAgent(Agent):
             actions_q_values = None
         return actions_q_values
 
-    def get_prediction(self, states):
-        return self.networks['main'].online_network.predict(self.prepare_batch_for_inference(states, 'main'))
+    def get_prediction(self, states, outputs=None):
+        return self.networks['main'].online_network.predict(self.prepare_batch_for_inference(states, 'main'),
+                                                            outputs=outputs)
 
     def update_transition_priorities_and_get_weights(self, TD_errors, batch):
         # update errors in prioritized replay buffer
@@ -138,6 +139,15 @@ class ValueOptimizationAgent(Agent):
         self.agent_logger.create_signal_value('Doubly Robust', dr)
         self.agent_logger.create_signal_value('Sequential Doubly Robust', seq_dr)
 
+    def get_reward_model_loss(self, batch: Batch):
+        network_keys = self.ap.network_wrappers['reward_model'].input_embedders_parameters.keys()
+        current_rewards_prediction_for_all_actions = self.networks['reward_model'].online_network.predict(
+            batch.states(network_keys))
+        current_rewards_prediction_for_all_actions[range(batch.size), batch.actions()] = batch.rewards()
+
+        return self.networks['reward_model'].train_and_sync_networks(
+            batch.states(network_keys), current_rewards_prediction_for_all_actions)[0]
+
     def improve_reward_model(self, epochs: int):
         """
         Train a reward model to be used by the doubly-robust estimator
@@ -146,27 +156,18 @@ class ValueOptimizationAgent(Agent):
         :return: None
         """
         batch_size = self.ap.network_wrappers['reward_model'].batch_size
-        network_keys = self.ap.network_wrappers['reward_model'].input_embedders_parameters.keys()
 
         # this is fitted from the training dataset
         for epoch in range(epochs):
             loss = 0
+            total_transitions_processed = 0
             for i, batch in enumerate(self.call_memory('get_shuffled_data_generator', batch_size)):
                 batch = Batch(batch)
-                current_rewards_prediction_for_all_actions = self.networks['reward_model'].online_network.predict(batch.states(network_keys))
-                current_rewards_prediction_for_all_actions[range(batch_size), batch.actions()] = batch.rewards()
-                loss += self.networks['reward_model'].train_and_sync_networks(
-                    batch.states(network_keys), current_rewards_prediction_for_all_actions)[0]
-            # print(self.networks['reward_model'].online_network.predict(batch.states(network_keys))[0])
+                loss += self.get_reward_model_loss(batch)
+                total_transitions_processed += batch.size
 
             log = OrderedDict()
             log['Epoch'] = epoch
-            log['loss'] = loss / int(self.call_memory('num_transitions_in_complete_episodes') / batch_size)
+            log['loss'] = loss / total_transitions_processed
             screen.log_dict(log, prefix='Training Reward Model')
-
-
-
-
-
-
 
