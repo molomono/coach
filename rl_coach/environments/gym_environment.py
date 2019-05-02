@@ -320,7 +320,7 @@ class GymEnvironment(Environment):
         self.state_space = StateSpace({})
 
         # observations
-        if not isinstance(self.env.observation_space, gym.spaces.dict.Dict):
+        if not isinstance(self.env.observation_space, gym.spaces.Dict):
             state_space = {'observation': self.env.observation_space}
         else:
             state_space = self.env.observation_space.spaces
