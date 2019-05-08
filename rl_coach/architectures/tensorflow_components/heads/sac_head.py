@@ -68,14 +68,8 @@ class SACPolicyHead(Head):
         self.policy_log_std = tf.clip_by_value(self.policy_mu_and_logsig[..., num_actions:],
                                                LOG_SIG_CAP_MIN, LOG_SIG_CAP_MAX,name='policy_log_std')
         
-        if not SCALE_OUTPUT:
-            self.output.append(self.policy_mean)        # output[0]
-            self.output.append(self.policy_log_std)     # output[1]
-        else:
-            # scale the actions to the action space
-            self.output.append(tf.multiply(self.policy_mean, self.output_scale, name='output_mean'))
-            self.output.append(tf.multiply(self.policy_log_std, self.output_scale, name='output_log_std'))
-
+        self.output.append(self.policy_mean)        # output[0]
+        self.output.append(self.policy_log_std)     # output[1]
 
         # define the distributions for the policy
         # Tensorflow's multivariate normal distribution supports reparameterization
@@ -95,6 +89,10 @@ class SACPolicyHead(Head):
         else:
             self.actions = self.raw_actions
             squash_correction = 0
+
+        if SCALE_OUTPUT:
+            # scale the actions to the action space
+            self.actions = tf.multiply(self.raw_actions, self.output_scale)
 
         # policy_action_logprob is a tensor through which gradients can flow
         self.sampled_actions_logprob = self.policy_distribution.log_prob(self.raw_actions) - squash_correction
