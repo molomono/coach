@@ -127,8 +127,8 @@ class SoftActorCriticAlgorithmParameters(AlgorithmParameters):
 
 
 class SoftActorCriticAgentParameters(AgentParameters):
-    def __init__(self):
-        super().__init__(algorithm=SoftActorCriticAlgorithmParameters(),
+    def __init__(self, algorithm_params = SoftActorCriticAlgorithmParameters()):
+        super().__init__(algorithm=algorithm_params,
                          exploration=AdditiveNoiseParameters(),
                          memory=ExperienceReplayParameters(),   # SAC doesnt use episodic related data
                          # network wrappers:

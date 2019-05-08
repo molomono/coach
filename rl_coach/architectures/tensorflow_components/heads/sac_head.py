@@ -25,7 +25,7 @@ from rl_coach.utils import eps
 
 LOG_SIG_CAP_MAX = 2
 LOG_SIG_CAP_MIN = -20
-
+SCALE_OUTPUT = True
 
 class SACPolicyHead(Head):
     def __init__(self, agent_parameters: AgentParameters, spaces: SpacesDefinition, network_name: str,
@@ -37,6 +37,8 @@ class SACPolicyHead(Head):
         self.return_type = ActionProbabilities
         self.num_actions = self.spaces.action.shape     # continuous actions
         self.squash = squash        # squashing using tanh
+        # bounded actions
+        self.output_scale = self.spaces.action.max_abs_range
 
     def _build_module(self, input_layer):
         self.given_raw_actions = tf.placeholder(tf.float32, [None, self.num_actions], name="actions")
@@ -45,6 +47,7 @@ class SACPolicyHead(Head):
 
         # build the network
         self._build_continuous_net(input_layer, self.spaces.action)
+        
 
     def _squash_correction(self,actions):
         '''
@@ -64,9 +67,15 @@ class SACPolicyHead(Head):
         self.policy_mean = tf.identity(self.policy_mu_and_logsig[..., :num_actions], name='policy_mean')
         self.policy_log_std = tf.clip_by_value(self.policy_mu_and_logsig[..., num_actions:],
                                                LOG_SIG_CAP_MIN, LOG_SIG_CAP_MAX,name='policy_log_std')
+        
+        if not SCALE_OUTPUT:
+            self.output.append(self.policy_mean)        # output[0]
+            self.output.append(self.policy_log_std)     # output[1]
+        else:
+            # scale the actions to the action space
+            self.output.append(tf.multiply(self.policy_mean, self.output_scale, name='output_mean'))
+            self.output.append(tf.multiply(self.policy_log_std, self.output_scale, name='output_log_std'))
 
-        self.output.append(self.policy_mean)        # output[0]
-        self.output.append(self.policy_log_std)     # output[1]
 
         # define the distributions for the policy
         # Tensorflow's multivariate normal distribution supports reparameterization

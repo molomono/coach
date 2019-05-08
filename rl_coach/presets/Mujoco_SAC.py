@@ -2,7 +2,7 @@ from rl_coach.agents.soft_actor_critic_agent import SoftActorCriticAgentParamete
 from rl_coach.architectures.layers import Dense
 from rl_coach.base_parameters import VisualizationParameters, PresetValidationParameters
 from rl_coach.core_types import EnvironmentEpisodes, EnvironmentSteps
-from rl_coach.filters.filter import InputFilter
+from rl_coach.filters.filter import InputFilter, OutputFilter
 from rl_coach.filters.reward.reward_rescale_filter import RewardRescaleFilter
 from rl_coach.environments.environment import SingleLevelSelection
 from rl_coach.environments.gym_environment import GymVectorEnvironment, mujoco_v2
